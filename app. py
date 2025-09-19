@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import json
-import os
 
 # Load remedies
 with open("remedies.json", "r") as f:
@@ -10,10 +9,10 @@ with open("remedies.json", "r") as f:
 st.title("🌱 Crop Disease Detector")
 st.write("Upload a plant leaf image to detect diseases and get remedies.")
 
-# Hugging Face API token (read from secrets if available)
-hf_token = st.secrets.get("HUGGINGFACE_API_TOKEN") or ""
+# Hugging Face API token (from Streamlit Secrets)
+hf_token = st.secrets.get("HUGGINGFACE_API_TOKEN", "")
 
-# Image upload
+# Upload image
 uploaded_file = st.file_uploader("Upload a leaf image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file:
@@ -23,7 +22,8 @@ if uploaded_file:
         with st.spinner("Analyzing..."):
             API_URL = "https://api-inference.huggingface.co/models/nickmuchi/plant-disease"
             headers = {"Authorization": f"Bearer {hf_token}"}
-            response = requests.post(API_URL, headers=headers, files={"file": uploaded_file.getvalue()})
+            files = {"file": uploaded_file.getvalue()}
+            response = requests.post(API_URL, headers=headers, files=files)
 
             if response.status_code == 200:
                 result = response.json()
@@ -32,7 +32,7 @@ if uploaded_file:
                     confidence = result[0]["score"]
                     st.success(f"Prediction: **{prediction}** (Confidence: {confidence:.2f})")
 
-                    # Show remedy if available
+                    # Remedy lookup
                     if prediction in remedies:
                         st.info(f"💡 Remedy: {remedies[prediction]}")
                     else:
