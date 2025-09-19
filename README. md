@@ -1,0 +1,10 @@
+# 🌱 Crop Disease Detector
+
+This is a simple Streamlit app for detecting crop diseases using AI (Hugging Face model).  
+
+## Features
+- Upload a plant leaf image
+- Detects common diseases using a Hugging Face model
+- Suggests remedies from a knowledge base
+
+## How to run locally
