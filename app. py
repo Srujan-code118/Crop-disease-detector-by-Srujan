@@ -1,0 +1,45 @@
+import streamlit as st
+import requests
+import json
+import os
+
+# Load remedies
+with open("remedies.json", "r") as f:
+    remedies = json.load(f)
+
+st.title("🌱 Crop Disease Detector")
+st.write("Upload a plant leaf image to detect diseases and get remedies.")
+
+# Hugging Face API token (read from secrets if available)
+hf_token = st.secrets.get("HUGGINGFACE_API_TOKEN") or ""
+
+# Image upload
+uploaded_file = st.file_uploader("Upload a leaf image", type=["jpg", "jpeg", "png"])
+
+if uploaded_file:
+    st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
+
+    if hf_token:
+        with st.spinner("Analyzing..."):
+            API_URL = "https://api-inference.huggingface.co/models/nickmuchi/plant-disease"
+            headers = {"Authorization": f"Bearer {hf_token}"}
+            response = requests.post(API_URL, headers=headers, files={"file": uploaded_file.getvalue()})
+
+            if response.status_code == 200:
+                result = response.json()
+                if isinstance(result, list) and len(result) > 0:
+                    prediction = result[0]["label"]
+                    confidence = result[0]["score"]
+                    st.success(f"Prediction: **{prediction}** (Confidence: {confidence:.2f})")
+
+                    # Show remedy if available
+                    if prediction in remedies:
+                        st.info(f"💡 Remedy: {remedies[prediction]}")
+                    else:
+                        st.warning("No remedy found for this disease.")
+                else:
+                    st.error("Could not detect disease. Try another image.")
+            else:
+                st.error("Error: Could not connect to Hugging Face API.")
+    else:
+        st.warning("⚠️ Please add your Hugging Face API token in Streamlit Secrets.")
